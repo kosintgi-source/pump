@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Water System HMI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a101c;--panel:#0f1727;--panel2:#131d30;--line:#1e2a40;--line2:#2a3854;--tx:#e6edf7;--mu:#8b9ab3;--mu2:#5d6b84;--raw:#60a5fa;--fil:#22d3ee;--byp:#f59e0b;--ok:#22c55e;--bad:#ef4444;--acc:#38bdf8;--vio:#a78bfa;--mono:'IBM Plex Mono',ui-monospace,monospace;--r:14px}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#13233f 0,transparent 60%),var(--bg);color:var(--tx);font-family:'IBM Plex Sans Thai',Tahoma,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input,select{font:inherit}
+.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:inline-block;vertical-align:middle}
+.wrap{max-width:1680px;margin:auto;padding:18px 20px 28px}
+
+/* header */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;gap:12px;align-items:center;min-width:0}
+.logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#0e7490);display:grid;place-items:center;box-shadow:0 6px 18px #0ea5e944;color:#e0f7ff}
+.logo .i{width:24px;height:24px;stroke-width:2}
+h1{font-size:20px;margin:0;font-weight:600;letter-spacing:.2px;line-height:1.3}
+.brand p{margin:2px 0 0;color:var(--mu);font-size:12.5px;letter-spacing:.3px}
+.hstat{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hitem{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px 6px 10px;display:flex;align-items:center;gap:9px;min-width:100px}
+.hitem .i{color:var(--mu);width:17px;height:17px}
+.hitem span{display:block;font-size:11px;color:var(--mu);line-height:1.3}
+.hitem b{display:block;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.3}
+.mono{font-family:var(--mono)}
+.pill{font-size:11.5px;font-weight:600;letter-spacing:.5px;padding:7px 12px;border-radius:999px;border:1px solid;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.pill i{width:7px;height:7px;border-radius:50%;background:currentColor;animation:blink 1.6s infinite}
+.pill.sim{color:#fbbf24;border-color:#78350f;background:#2a1606}
+.pill.live{color:#4ade80;border-color:#166534;background:#052e16}
+.pill.stale{color:#f87171;border-color:#7f1d1d;background:#2a0a0a}
+@keyframes blink{50%{opacity:.25}}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:12px;padding:11px 13px 12px;transition:border-color .3s;min-width:0}
+.kpi .t{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden}
+.kpi .t em{margin-left:auto;font-style:normal;font-family:var(--mono);color:var(--mu2);font-size:10.5px}
+.ki{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c);flex:none}
+.ki .i{width:15px;height:15px}
+.kpi .v{font-size:24px;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
+.kpi .v small{font-size:12px;color:var(--mu);font-weight:400;margin-left:4px}
+.kpi .bar{height:3px;border-radius:2px;background:var(--line);margin-top:8px;overflow:hidden}
+.kpi .bar i{display:block;height:100%;width:0;background:var(--c,var(--acc));transition:width .3s}
+.kpi.warn{border-color:#92400e}.kpi.warn .v{color:#fbbf24}
+.kpi.bad{border-color:#7f1d1d}.kpi.bad .v{color:#f87171}
+
+/* layout */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:14px;align-items:start}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.phead{display:flex;justify-content:space-between;align-items:center;padding:11px 14px 11px 16px;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap}
+.phead h2{font-size:14px;margin:0;font-weight:600;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+.phead h2 .i{color:var(--acc)}
+.phead small{color:var(--mu);font-size:12px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mu);flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:18px;height:4px;border-radius:2px;background:var(--c)}
+.tools{display:flex;gap:6px;align-items:center}
+.ibtn{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line2);background:#101b2e;color:var(--mu);cursor:pointer;transition:all .2s}
+.ibtn:hover{color:var(--tx);background:#16243c}
+.ibtn .i{width:17px;height:17px}
+.svgwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:0 0 var(--r) var(--r);position:relative}
+.svgwrap svg{display:block;width:100%;height:auto}
+.svgwrap.zoom svg{min-width:980px}
+.hint{display:none;position:sticky;left:0;padding:6px 12px;font-size:12px;color:var(--mu);background:#0b1426;border-bottom:1px solid var(--line)}
+.svgwrap.zoom .hint{display:block}
+.panel.max{position:fixed;inset:8px;z-index:60;overflow:auto;box-shadow:0 20px 60px #000c}
+body.maxed{overflow:hidden}
+.trends{display:grid;grid-template-columns:1fr 1fr}
+.trend{padding:12px 16px 14px;min-width:0}
+.trend+.trend{border-left:1px solid var(--line)}
+.trend h3{font-size:13px;margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.trend h3>span:first-child{display:flex;align-items:center;gap:7px}
+.trend h3 .i{color:var(--acc);width:16px;height:16px}
+canvas{width:100%;height:190px;display:block}
+
+/* cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.card.bp{box-shadow:inset 0 2px 0 var(--byp);background:linear-gradient(180deg,#16161a 0,var(--panel) 120px)}
+.chead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.chead>div{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.cic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:#15223a;color:var(--acc);flex:none}
+.card.bp .cic{background:#2a1606;color:#fbbf24}
+.chead h3{margin:0;font-size:15px;font-weight:600;line-height:1.35}
+.chead small{color:var(--mu);font-size:12px;display:block;margin-top:1px}
+.state{font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;border:1px solid;white-space:nowrap;transition:all .3s}
+.state.closed,.state.stop{color:#94a3b8;border-color:#334155;background:#172033}
+.state.open{color:#fbbf24;border-color:#92400e;background:#2a1606}
+.state.moving{color:#7dd3fc;border-color:#075985;background:#0c2a44}
+.state.run{color:#4ade80;border-color:#166534;background:#052e16}
+.state.trip{color:#f87171;border-color:#7f1d1d;background:#2a0a0a}
+.seg{display:flex;background:#0a1220;border:1px solid var(--line2);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--mu);padding:8px 6px;border-radius:7px;font-size:12.5px;cursor:pointer;transition:all .2s;min-height:36px}
+.seg button:hover{color:var(--tx)}
+.seg button.on{background:#1e3a5f;color:#fff;box-shadow:0 1px 0 #ffffff14 inset}
+.valve{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.valve .track{flex:1;height:8px;border-radius:5px;background:#0a1220;border:1px solid var(--line);overflow:hidden}
+.valve .track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b45309,#f59e0b)}
+.valve b{font-variant-numeric:tabular-nums;font-size:13px;min-width:40px;text-align:right}
+.valve span{font-size:12px;color:var(--mu)}
+.cond{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#0c1422;transition:all .3s}
+.lamp{width:10px;height:10px;border-radius:50%;background:#334155;transition:all .3s}
+.cond.hit{border-color:#92400e;background:#1c1406}
+.cond.hit .lamp{background:#f59e0b;box-shadow:0 0 10px #f59e0b}
+.cond b{font-size:13px;font-weight:600;display:block}
+.cond small{color:var(--mu);font-size:12px}
+.num{width:56px;background:#0a1220;border:1px solid var(--line2);color:var(--tx);border-radius:6px;padding:2px 5px;font-size:12.5px}
+.cond output{font-variant-numeric:tabular-nums;font-weight:600;font-size:15px;text-align:right}
+.cond output small{display:block;font-weight:400;font-size:11px}
+.or{text-align:center;font-size:11px;color:var(--byp);margin:5px 0;letter-spacing:2px;font-weight:600}
+.delays{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--mu);align-items:center}
+.delays label{display:flex;align-items:center;gap:6px}
+.note{font-size:12px;color:var(--mu);line-height:1.65;margin:10px 0 0}
+.note b{color:var(--tx);font-weight:600}
+.tmr{margin-top:10px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:12px;color:var(--mu)}
+.tmr .tb{grid-column:1/-1;height:5px;border-radius:3px;background:#0a1220;overflow:hidden}
+.tmr .tb i{display:block;height:100%;width:0;background:var(--acc)}
+.tmr b{font-family:var(--mono);color:var(--tx);font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line2);background:#15223a;color:var(--tx);border-radius:9px;padding:8px 12px;font-size:13px;cursor:pointer;transition:background .2s;min-height:38px;text-decoration:none}
+.btn .i{width:16px;height:16px}
+.btn:hover{background:#1c2d4a}
+.btn.pri{background:#0e5e75;border-color:#0891b2}.btn.pri:hover{background:#0e7490}
+.btn.amb{border-color:#92400e;color:#fcd34d}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px;gap:10px}
+.kv.first{border-top:0}
+.kv span{color:var(--mu)}.kv b{font-variant-numeric:tabular-nums;font-weight:600}
+.meter{height:8px;border-radius:5px;background:#0a1220;border:1px solid var(--line);overflow:hidden;margin:4px 0 10px}
+.meter i{display:block;height:100%;width:0;transition:width .3s,background .3s}
+.pump{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.pump .pic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:#15223a;color:var(--mu);transition:all .3s}
+.pump .pic.run{background:#052e16;color:#4ade80}
+.pump .pic.trip{background:#2a0a0a;color:#f87171}
+.pump b{font-weight:600;display:block;font-size:13.5px}.pump small{color:var(--mu);font-size:12px}
+select{background:#15223a;border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:8px 10px;font-size:13px;min-height:38px}
+
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;padding:14px 16px 16px}
+.ph{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0c1422;aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-align:center;color:var(--mu);cursor:default}
+.ph.has{padding:0;cursor:zoom-in}
+.ph img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.ph.has:hover img{transform:scale(1.04)}
+.ph .cap{position:absolute;left:0;right:0;bottom:0;padding:18px 10px 8px;font-size:12px;color:#fff;text-align:left;background:linear-gradient(transparent,#000c)}
+.ph .i{width:30px;height:30px;color:#3b5577;stroke-width:1.5}
+.ph b{font-size:12.5px;color:var(--tx);font-weight:600}
+.ph small{font-size:11px;color:var(--mu2);line-height:1.4}
+.ph.empty{background:repeating-linear-gradient(135deg,#0c1422 0 10px,#0e1829 10px 20px);border-style:dashed}
+.lb{position:fixed;inset:0;background:#000d;z-index:80;display:flex;align-items:center;justify-content:center;padding:20px}
+.lb[hidden]{display:none}
+.lb figure{margin:0;max-width:min(1100px,100%);max-height:100%;display:flex;flex-direction:column;gap:10px}
+.lb img{max-width:100%;max-height:80vh;border-radius:10px;object-fit:contain}
+.lb figcaption{color:#e2e8f0;font-size:14px;text-align:center}
+.lb .ibtn{position:absolute;top:14px;right:14px}
+
+/* events */
+.events{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
+.events>div{padding:12px 16px 16px;min-width:0}
+.events>div+div{border-left:1px solid var(--line)}
+.events h3{font-size:13px;margin:0 0 10px;font-weight:600;display:flex;align-items:center;gap:7px}
+.events h3 .i{width:16px;height:16px;color:var(--acc)}
+.alm{display:grid;grid-template-columns:4px auto 1fr auto;gap:10px;align-items:center;padding:8px 10px 8px 0;border-radius:8px;background:#0c1422;margin-bottom:6px;font-size:13px}
+.alm:before{content:"";align-self:stretch;border-radius:4px 0 0 4px;background:var(--c)}
+.alm .i{width:16px;height:16px;color:var(--c)}
+.alm.bad{--c:var(--bad)}.alm.warn{--c:var(--byp)}
+.alm time{font-family:var(--mono);font-size:11.5px;color:var(--mu)}
+.empty{color:#4ade80;font-size:13px;padding:8px 0;display:flex;align-items:center;gap:7px}
+.log{max-height:240px;overflow:auto;font-size:12.5px}
+.log div{display:grid;grid-template-columns:70px 8px 1fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #151f33}
+.log time{font-family:var(--mono);color:var(--mu);font-size:11.5px}
+.log i{width:7px;height:7px;border-radius:50%;background:var(--c,#64748b)}
+.log .warn{--c:var(--byp)}.log .bad{--c:var(--bad)}.log .ok{--c:var(--ok)}.log .info{--c:var(--acc)}
+footer{max-width:1680px;margin:0 auto;padding:0 20px 24px;font-size:12px;color:var(--mu2);line-height:1.6}
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:#0f1727;border:1px solid var(--line2);color:var(--tx);padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:all .3s;z-index:90;max-width:calc(100% - 32px);box-shadow:0 10px 30px #0008}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.ok{border-color:#166534}.toast.bad{border-color:#7f1d1d}
+
+/* svg */
+.pshell{fill:none;stroke:#52627c;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}
+.pcore{fill:none;stroke:#0b1424;stroke-width:12;stroke-linecap:round;stroke-linejoin:round;transition:stroke .5s}
+.pcore.wet{stroke:#0c2740}
+.flow{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:12 12;animation:dash 1s linear infinite;opacity:0;transition:opacity .5s}
+.flow.on{opacity:1}
+.flow.raw{stroke:var(--raw)}.flow.fil{stroke:var(--fil)}.flow.byp{stroke:var(--byp)}.flow.mix{stroke:#7dd3fc}
+@keyframes dash{to{stroke-dashoffset:-24}}
+.lbl{fill:#e6edf7;font-size:15px;font-weight:600}
+.sub{fill:#8b9ab3;font-size:12px}
+.tag{fill:#8b9ab3;font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:.5px}
+.val{fill:#e6edf7;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.chip rect{fill:#0f1727;stroke:#2a3854}
+.chip.warn rect{stroke:#b45309;fill:#1c1406}.chip.warn .val{fill:#fbbf24}
+.leader{stroke:#475569;stroke-width:1.2;stroke-dasharray:3 3}
+.pring{fill:none;stroke:transparent;stroke-width:2.5;transition:stroke .3s}
+.pmp.run .pring{stroke:#22c55e;filter:url(#glow)}
+.pmp.trip .pring{stroke:#ef4444}
+.led{fill:#334155;transition:fill .3s}
+.pmp.run .led{fill:#4ade80;filter:url(#glow)}
+.pmp.trip .led{fill:#ef4444;animation:blink 1s infinite}
+.pmp.run .coup{animation:cpl .22s linear infinite}
+@keyframes cpl{to{transform:translateX(8px)}}
+.mdial{transform-box:fill-box;transform-origin:center}
+.mdial.on{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.vw{fill:#0e3a57;transition:fill .5s}
+.vessel.flowing .vw{fill:#0e6a92}
+.bb{fill:#e0f7ff;opacity:0}
+.vessel.flowing .bb{animation:bub 1.8s linear infinite}
+@keyframes bub{0%{transform:translateY(0);opacity:0}15%{opacity:.8}100%{transform:translateY(-52px);opacity:0}}
+.wave{animation:wave 2.4s linear infinite}
+@keyframes wave{to{transform:translateX(60px)}}
+.fall{stroke:#7dd3fc;stroke-width:4;stroke-dasharray:6 6;animation:dash .5s linear infinite;opacity:0;transition:opacity .4s}
+.fall.on{opacity:.9}
+.lvl{fill:#fff;font-size:22px;font-weight:700;paint-order:stroke;stroke:#062033;stroke-width:4px;text-anchor:middle;font-variant-numeric:tabular-nums}
+.win{fill:#334155;transition:fill .6s}.win.lit{fill:#fde68a}
+.paused .flow,.paused .coup,.paused .wave,.paused .bb,.paused .fall,.paused .mdial{animation-play-state:paused!important}
+
+/* view modes */
+body.embed .wrap{padding:10px 12px 14px}
+body.embed footer{display:none}
+body[data-view="process"] .side{display:none!important}
+body[data-view="process"] .trends,body[data-view="process"] .events,body[data-view="process"] #galleryPanel{display:none}
+body[data-view="process"] .grid{grid-template-columns:1fr}
+.live-only{display:none}
+body.is-live .live-only{display:block}
+body.is-live .sim-only{display:none}
+
+/* responsive */
+@media(max-width:1280px){.grid{grid-template-columns:1fr}.side{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))}.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.hstat{width:100%}.hitem{flex:1 1 130px}}
+@media(max-width:760px){
+  .wrap{padding:12px 12px 20px}
+  h1{font-size:17px}
+  .brand p{font-size:11.5px}
+  .side{grid-template-columns:1fr!important}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .kpi .v{font-size:21px}
+  .trends,.events{grid-template-columns:1fr}
+  .trend+.trend,.events>div+div{border-left:0;border-top:1px solid var(--line)}
+  .gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .phead .legend{display:none}
+  .pill{order:5}
+}
+@media(max-width:380px){.kpis{grid-template-columns:1fr}.hitem{flex:1 1 100%}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3C8.5 7.6 6 11 6 14.2a6 6 0 0 0 12 0C18 11 15.5 7.6 12 3Z"/><path d="M9.5 15a2.6 2.6 0 0 0 2.5 2.5"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M3.5 16a8.5 8.5 0 1 1 17 0"/><path d="M12 16l4.5-5"/><circle cx="12" cy="16" r="1.4"/><path d="M6 12.2l1.2.7M12 7.5v1.4M18 12.2l-1.2.7"/></symbol>
+  <symbol id="i-flow" viewBox="0 0 24 24"><path d="M3 8.5c2.5-1.8 5-1.8 7.5 0s5 1.8 7.5 0M3 13.5c2.5-1.8 5-1.8 7.5 0s5 1.8 7.5 0"/><path d="M17 17.5l3 1.5-3 1.5M4 19h16"/></symbol>
+  <symbol id="i-valve" viewBox="0 0 24 24"><path d="M3 9v8l9-4zM21 9v8l-9-4z"/><path d="M12 13V6M8.5 4h7v2h-7z"/></symbol>
+  <symbol id="i-pump" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="8" rx="1.6"/><path d="M9 10.5v3M15 10.5v3"/><rect x="8" y="13.5" width="8" height="5" rx="1"/><path d="M3 16h5M16 16h5M6 21.5h12"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M6 7a3 3 0 0 1 6 0v12H6zM13 7a3 3 0 0 1 6 0v12h-6z"/><path d="M6 13h6M13 13h6M4 21h17"/></symbol>
+  <symbol id="i-tank" viewBox="0 0 24 24"><path d="M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3v12c0 1.7-3.1 3-7 3s-7-1.3-7-3z"/><path d="M5 6c0 1.7 3.1 3 7 3s7-1.3 7-3M5 13c2 1.3 4.5 1.8 7 1.8s5-.5 7-1.8"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="3.5" rx="1"/><path d="M5 21V8h14v13M3 21h18M8.5 11h2M13.5 11h2M8.5 14.5h2M13.5 14.5h2M11 21v-3h2v3"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5M10 20v-5.5h4V20"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.8 2H4.2z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.3v.2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7.5 4.5l12 7.5-12 7.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v5h5"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.3L20 15.5"/><path d="M20 20v-4.5h-4.5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3.5 7.5h4l2-3h5l2 3h4v12h-17z"/><circle cx="12" cy="13" r="3.6"/></symbol>
+  <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="4.5" y="3" width="15" height="18" rx="1.6"/><path d="M4.5 9h15M4.5 15h15M10.5 3v18"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8.5"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></symbol>
+  <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M8 10.5h5M10.5 8v5"/></symbol>
+  <symbol id="i-fit" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M8 12h8M8 12l2-2M8 12l2 2M16 12l-2-2M16 12l-2 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7.5 15l3.5-4 3 2.5 5-6.5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3h5M10 3v6L4.8 18.3A1.8 1.8 0 0 0 6.4 21h11.2a1.8 1.8 0 0 0 1.6-2.7L14 9V3"/><path d="M7.3 15h9.4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</svg>
+
+<div class="wrap" id="app">
+
+<header class="top">
+  <div class="brand">
+    <div class="logo"><svg class="i"><use href="#i-drop"/></svg></div>
+    <div><h1 id="title">ระบบกรองน้ำ &amp; ส่งน้ำ 2 จุด</h1><p><span id="site">บ้านพักอาศัย + หอพัก</span> • SCADA / HMI • F-01 / XV-01 / P-01 / P-02</p></div>
+  </div>
+  <div class="hstat">
+    <span class="pill sim" id="modePill"><i></i><span id="modeTxt">SIMULATION</span></span>
+    <div class="hitem"><svg class="i"><use href="#i-sliders"/></svg><div><span>โหมดควบคุม</span><b id="hMode">AUTO</b></div></div>
+    <div class="hitem"><svg class="i"><use href="#i-valve"/></svg><div><span>บายพาส XV-01</span><b id="hBp">ปิด</b></div></div>
+    <div class="hitem"><svg class="i"><use href="#i-bell"/></svg><div><span>สัญญาณเตือน</span><b id="hAlm">0</b></div></div>
+    <div class="hitem"><svg class="i"><use href="#i-clock"/></svg><div><span id="clockL">เวลาจำลอง</span><b class="mono" id="clock">00:00:00</b></div></div>
+  </div>
+</header>
+
+<section class="kpis">
+  <div class="kpi" id="kFT01" style="--c:var(--raw)"><div class="t"><span class="ki"><svg class="i"><use href="#i-flow"/></svg></span>น้ำเข้าระบบ<em>FT-01</em></div><div class="v"><span>--</span><small>m³/h</small></div><div class="bar"><i></i></div></div>
+  <div class="kpi" id="kPT01" style="--c:var(--raw)"><div class="t"><span class="ki"><svg class="i"><use href="#i-gauge"/></svg></span>แรงดันหน้ากรอง<em>PT-01</em></div><div class="v"><span>--</span><small>bar</small></div><div class="bar"><i></i></div></div>
+  <div class="kpi" id="kPT02" style="--c:var(--vio)"><div class="t"><span class="ki"><svg class="i"><use href="#i-gauge"/></svg></span>แรงดันหลังกรอง<em>PT-02</em></div><div class="v"><span>--</span><small>bar</small></div><div class="bar"><i></i></div></div>
+  <div class="kpi" id="kFT02" style="--c:var(--fil)"><div class="t"><span class="ki"><svg class="i"><use href="#i-filter"/></svg></span>น้ำผ่านกรอง<em>FT-02</em></div><div class="v"><span>--</span><small>m³/h</small></div><div class="bar"><i></i></div></div>
+  <div class="kpi" id="kBP" style="--c:var(--byp)"><div class="t"><span class="ki"><svg class="i"><use href="#i-valve"/></svg></span>น้ำบายพาส<em>XV-01</em></div><div class="v"><span>--</span><small>m³/h</small></div><div class="bar"><i></i></div></div>
+  <div class="kpi" id="kLT01" style="--c:#38bdf8"><div class="t"><span class="ki"><svg class="i"><use href="#i-tank"/></svg></span>ถังพื้นดิน<em>LT-01</em></div><div class="v"><span>--</span><small>%</small></div><div class="bar"><i></i></div></div>
+  <div class="kpi" id="kLT02" style="--c:#34d399"><div class="t"><span class="ki"><svg class="i"><use href="#i-building"/></svg></span>ถังหลังคา<em>LT-02</em></div><div class="v"><span>--</span><small>%</small></div><div class="bar"><i></i></div></div>
+</section>
+
+<div class="grid">
+<div class="col">
+  <section class="panel" id="procPanel">
+    <div class="phead">
+      <h2><svg class="i"><use href="#i-drop"/></svg>ภาพรวมกระบวนการ</h2>
+      <div class="legend"><span style="--c:var(--raw)"><i></i>น้ำประปา</span><span style="--c:var(--fil)"><i></i>น้ำผ่านกรอง</span><span style="--c:var(--byp)"><i></i>บายพาส (ไม่ผ่านกรอง)</span></div>
+      <div class="tools">
+        <button class="ibtn" id="bZoom" title="ขยาย / พอดีจอ" aria-label="ขยายหรือพอดีจอ"><svg class="i"><use href="#i-zoom"/></svg></button>
+        <button class="ibtn" id="bMax" title="เต็มจอ" aria-label="แสดงเต็มจอ"><svg class="i"><use href="#i-expand"/></svg></button>
+      </div>
+    </div>
+    <div class="svgwrap" id="proc">
+      <div class="hint">← เลื่อนซ้าย-ขวาเพื่อดูทั้งระบบ →</div>
+      <svg id="procSvg" viewBox="0 84 1260 636" role="img" aria-label="ภาพกระบวนการระบบน้ำ: มิเตอร์น้ำ ปั๊ม P-01 ชุดกรอง 4 ถัง วาล์วบายพาส บ้านพัก ถังพื้นดิน ปั๊ม P-02 ถังหลังคาและหอพัก">
+<defs id="defs">
+  <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#14203a" stroke-width="1"/></pattern>
+  <linearGradient id="gSky" x2="0" y2="1"><stop offset="0" stop-color="#0e1c33"/><stop offset="1" stop-color="#0a1322"/></linearGradient>
+  <linearGradient id="gSteel" x1="0" x2="1"><stop offset="0" stop-color="#475569"/><stop offset=".3" stop-color="#e2e8f0"/><stop offset=".55" stop-color="#94a3b8"/><stop offset="1" stop-color="#334155"/></linearGradient>
+  <linearGradient id="gSteelV" x2="0" y2="1"><stop offset="0" stop-color="#94a3b8"/><stop offset=".35" stop-color="#f1f5f9"/><stop offset="1" stop-color="#475569"/></linearGradient>
+  <linearGradient id="gFRP" x1="0" x2="1"><stop offset="0" stop-color="#172554"/><stop offset=".3" stop-color="#3b82f6"/><stop offset=".55" stop-color="#2563eb"/><stop offset="1" stop-color="#172554"/></linearGradient>
+  <linearGradient id="gMotor" x1="0" x2="1"><stop offset="0" stop-color="#0f3d25"/><stop offset=".35" stop-color="#2f9e62"/><stop offset=".6" stop-color="#1f7a4a"/><stop offset="1" stop-color="#0b2e1c"/></linearGradient>
+  <linearGradient id="gPE" x1="0" x2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset=".4" stop-color="#60a5fa"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+  <linearGradient id="gBrass" x1="0" x2="1"><stop offset="0" stop-color="#78350f"/><stop offset=".35" stop-color="#f59e0b"/><stop offset=".6" stop-color="#fcd34d"/><stop offset="1" stop-color="#92400e"/></linearGradient>
+  <linearGradient id="gAct" x1="0" x2="1"><stop offset="0" stop-color="#9a3412"/><stop offset=".4" stop-color="#fb923c"/><stop offset="1" stop-color="#c2410c"/></linearGradient>
+  <linearGradient id="gTile" x2="0" y2="1"><stop offset="0" stop-color="#ea580c"/><stop offset="1" stop-color="#7c2d12"/></linearGradient>
+  <linearGradient id="gWall" x1="0" x2="1"><stop offset="0" stop-color="#f1f5f9"/><stop offset=".7" stop-color="#e2e8f0"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+  <linearGradient id="gDorm" x1="0" x2="1"><stop offset="0" stop-color="#e2e8f0"/><stop offset=".6" stop-color="#cbd5e1"/><stop offset="1" stop-color="#64748b"/></linearGradient>
+  <linearGradient id="gWater" x2="0" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#0369a1"/></linearGradient>
+  <clipPath id="gClip"><rect x="781" y="560" width="148" height="100"/></clipPath>
+  <clipPath id="rClip"><rect x="1111" y="151" width="88" height="88" rx="15"/></clipPath>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000" flood-opacity=".45"/></filter>
+</defs>
+
+<rect x="0" y="84" width="1260" height="636" fill="url(#gSky)"/>
+<rect x="0" y="84" width="1260" height="636" fill="url(#grid)" opacity=".7"/>
+<rect x="0" y="666" width="1260" height="54" fill="#0b1321"/><line x1="0" y1="666" x2="1260" y2="666" stroke="#223049" stroke-width="2"/>
+
+<!-- filter skid internal header (behind vessels) -->
+<path d="M370 250 H380 V163 H640 V250 H650" fill="none" stroke="#64748b" stroke-width="5" stroke-linejoin="round"/>
+
+<g id="pipes"></g>
+<circle cx="255" cy="250" r="12" fill="url(#gSteel)"/>
+
+<!-- ===== SOURCE + WATER METER FT-01 ===== -->
+<text x="70" y="200" class="lbl" text-anchor="middle">น้ำประปา</text>
+<g>
+  <rect x="38" y="237" width="7" height="26" rx="1.5" fill="url(#gSteelV)"/>
+  <rect x="95" y="237" width="7" height="26" rx="1.5" fill="url(#gSteelV)"/>
+  <rect x="44" y="241" width="52" height="18" rx="6" fill="url(#gBrass)"/>
+  <circle cx="70" cy="236" r="18" fill="url(#gBrass)" filter="url(#shadow)"/>
+  <circle cx="70" cy="236" r="13.5" fill="#f8fafc"/>
+  <rect x="63" y="229" width="14" height="5" rx="1" fill="#0f172a"/>
+  <text x="70" y="233.3" text-anchor="middle" style="font:600 4.2px 'IBM Plex Mono',monospace;fill:#e2e8f0" id="mCount">00000</text>
+  <g class="mdial" id="mDial"><circle cx="70" cy="241" r="5" fill="transparent"/><path d="M70 236.5 L71.2 241 L70 245.5 L68.8 241Z" fill="#dc2626"/></g>
+  <text x="70" y="248.8" text-anchor="middle" style="font:500 3.6px sans-serif;fill:#64748b">m³</text>
+  <path d="M60 226 a13 13 0 0 1 18 -2" stroke="#fff" stroke-opacity=".7" stroke-width="1.5" fill="none"/>
+</g>
+
+<!-- ===== P-01 (built by JS) ===== -->
+<g id="pumpSlot1"></g>
+<text x="190" y="298" class="lbl" text-anchor="middle">P-01</text>
+<text x="190" y="316" class="sub" text-anchor="middle">ปั๊มดันน้ำเข้ากรอง</text>
+
+<!-- ===== FILTER SKID F-01 ===== -->
+<text x="510" y="138" class="lbl" text-anchor="middle">ชุดกรอง F-01</text>
+<rect x="370" y="148" width="280" height="200" rx="14" fill="#0d1628" fill-opacity=".55" stroke="#2a3854" stroke-width="1.5"/>
+<rect x="378" y="334" width="264" height="10" rx="2" fill="#334155"/>
+<g id="vessels"></g>
+<g class="sub" text-anchor="middle"><text x="415" y="364">กรวด</text><text x="481" y="364">คาร์บอน</text><text x="547" y="364">เรซิน</text><text x="613" y="364">ไส้กรอง 5µ</text></g>
+<text x="372" y="388" class="sub" id="dpT" style="fill:#cbd5e1">ΔP -- bar</text>
+<rect x="468" y="381" width="44" height="7" rx="3.5" fill="#0a1220" stroke="#1e2a40"/><rect x="468" y="381" width="0" height="7" rx="3.5" id="dpBar" fill="#22c55e"/>
+
+<!-- ===== XV-01 MOTORIZED BALL VALVE ===== -->
+<g id="xv">
+  <rect x="514" y="416" width="7" height="28" rx="1.5" fill="url(#gSteelV)"/>
+  <rect x="559" y="416" width="7" height="28" rx="1.5" fill="url(#gSteelV)"/>
+  <rect x="520" y="418" width="40" height="24" rx="9" fill="url(#gSteelV)"/>
+  <circle cx="540" cy="430" r="9.5" fill="#0b1220" stroke="#64748b"/>
+  <g id="xvBall" transform="rotate(90 540 430)"><rect id="xvBore" x="531" y="427" width="18" height="6" rx="2" fill="#475569"/></g>
+  <rect x="536" y="404" width="8" height="14" fill="#64748b"/>
+  <rect x="521" y="378" width="38" height="28" rx="4" fill="url(#gAct)" filter="url(#shadow)"/>
+  <rect x="526" y="383" width="12" height="7" rx="1" fill="#0f172a" opacity=".55"/>
+  <path d="M547 386 h8 M547 390 h8" stroke="#7c2d12" stroke-width="1.5"/>
+  <circle id="xvInd" cx="540" cy="375" r="6.5" fill="#475569" stroke="#0f172a" stroke-width="1.5"/>
+</g>
+<text x="570" y="458" class="tag" style="font-size:11px;fill:#fcd34d">XV-01</text>
+<text x="700" y="420" class="sub" style="fill:#fbbf24" text-anchor="middle">น้ำไม่ผ่านกรอง</text>
+
+<!-- bypass info box -->
+<g>
+  <rect x="360" y="472" width="360" height="94" rx="12" fill="#12151d" fill-opacity=".92" stroke="#3b2a10"/>
+  <rect x="360" y="472" width="4" height="94" rx="2" fill="#f59e0b"/>
+  <text x="380" y="497" class="lbl">ท่อบายพาส • XV-01</text>
+  <rect id="bpPillR" x="606" y="481" width="100" height="24" rx="12" fill="#172033" stroke="#334155"/>
+  <text id="bpPillT" x="656" y="498" text-anchor="middle" style="font-size:12px;font-weight:600;fill:#94a3b8">ปิด</text>
+  <circle id="l1" cx="386" cy="521" r="5" fill="#334155"/><text id="c1t" x="398" y="525" class="sub" style="fill:#cbd5e1">PT-02 --</text>
+  <circle id="l2" cx="552" cy="521" r="5" fill="#334155"/><text id="c2t" x="564" y="525" class="sub" style="fill:#cbd5e1">FT-02 --</text>
+  <text x="380" y="551" class="sub">เปิดเมื่อ แรงดันหลังกรองต่ำ หรือ น้ำไหลอ่อน</text>
+</g>
+
+<!-- ===== MAG FLOW METER FT-02 ===== -->
+<g>
+  <rect x="722" y="236" width="7" height="28" rx="1.5" fill="url(#gSteelV)"/>
+  <rect x="761" y="236" width="7" height="28" rx="1.5" fill="url(#gSteelV)"/>
+  <rect x="728" y="238" width="34" height="24" rx="4" fill="url(#gFRP)"/>
+  <rect x="741" y="216" width="8" height="22" fill="#64748b"/>
+  <rect x="726" y="194" width="38" height="24" rx="5" fill="#e2e8f0" filter="url(#shadow)"/>
+  <rect x="730" y="198" width="30" height="12" rx="1.5" fill="#062014"/>
+  <text id="ftDisp" x="745" y="207.5" text-anchor="middle" style="font:600 8px 'IBM Plex Mono',monospace;fill:#4ade80">0.00</text>
+  <circle cx="733" cy="214" r="1.3" fill="#22c55e"/><circle cx="757" cy="214" r="1.3" fill="#94a3b8"/>
+</g>
+<text x="797" y="280" class="sub" style="fill:#67e8f9" text-anchor="end">น้ำกรอง</text>
+
+<!-- ===== HOUSE ===== -->
+<text x="855" y="162" class="lbl" text-anchor="middle">บ้านพักอาศัย</text>
+<g filter="url(#shadow)">
+  <rect x="800" y="232" width="110" height="228" fill="url(#gWall)"/>
+  <path d="M782 236 L855 180 L928 236 Z" fill="url(#gTile)"/>
+</g>
+<path d="M801 222 L909 222 M817 210 L893 210 M833 198 L877 198" stroke="#7c2d12" stroke-opacity=".6" stroke-width="1.5"/>
+<path d="M782 236 H928" stroke="#431407" stroke-width="3"/>
+<g stroke="#f8fafc" stroke-width="2.5">
+  <rect x="815" y="252" width="28" height="26" rx="1.5" class="win" id="hw1"/><rect x="867" y="252" width="28" height="26" rx="1.5" class="win" id="hw2"/>
+  <rect x="815" y="304" width="28" height="26" rx="1.5" class="win" id="hw3"/><rect x="867" y="304" width="28" height="26" rx="1.5" class="win" id="hw4"/>
+</g>
+<path d="M829 252 V278 M881 252 V278 M829 304 V330 M881 304 V330" stroke="#f8fafc" stroke-width="1.5"/>
+<rect x="841" y="398" width="28" height="62" rx="2" fill="#7c2d12"/><circle cx="864" cy="431" r="2" fill="#fcd34d"/>
+<rect x="795" y="458" width="120" height="6" rx="1" fill="#475569"/>
+<!-- faucet -->
+<path d="M800 380 h-10 v8" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+<!-- ===== GROUND TANK LT-01 (PE) ===== -->
+<rect x="780" y="560" width="150" height="100" fill="#0a1628"/>
+<g clip-path="url(#gClip)"><rect id="gWater" x="781" y="610" width="148" height="60" fill="url(#gWater)"/><g id="gWaveY"><path id="gWave" class="wave" fill="#38bdf8"/></g></g>
+<line id="gFall" class="fall" x1="855" y1="562" x2="855" y2="610"/>
+<rect x="780" y="560" width="150" height="100" fill="url(#gPE)" opacity=".36"/>
+<g stroke="#bfdbfe" stroke-opacity=".3" stroke-width="2"><line x1="780" y1="576" x2="930" y2="576"/><line x1="780" y1="594" x2="930" y2="594"/><line x1="780" y1="612" x2="930" y2="612"/><line x1="780" y1="630" x2="930" y2="630"/><line x1="780" y1="648" x2="930" y2="648"/></g>
+<rect x="780" y="560" width="150" height="100" fill="none" stroke="#3b82f6" stroke-opacity=".7" stroke-width="1.5"/>
+<ellipse cx="855" cy="660" rx="75" ry="9" fill="#1e3a8a"/>
+<ellipse cx="855" cy="560" rx="75" ry="13" fill="url(#gPE)"/>
+<ellipse cx="855" cy="557" rx="15" ry="5" fill="#0f172a" stroke="#93c5fd" stroke-opacity=".5"/>
+<rect x="896" y="540" width="13" height="10" rx="2" fill="#e2e8f0"/><path d="M898 550 h9 l2 6 h-13z" fill="#94a3b8"/>
+<text x="893" y="598" class="tag" text-anchor="middle" style="fill:#e0f2fe">LT-01</text>
+<text x="893" y="628" class="lvl" id="gTxt">--%</text>
+<text x="855" y="698" class="lbl" text-anchor="middle">ถังพักน้ำพื้นดิน</text>
+
+<!-- ===== P-02 (built by JS) ===== -->
+<g id="pumpSlot2"></g>
+<text x="1015" y="690" class="lbl" text-anchor="middle">P-02</text>
+<text x="1015" y="708" class="sub" text-anchor="middle">ส่งขึ้นถังหลังคา</text>
+
+<!-- ===== DORMITORY + ROOF TANK LT-02 (stainless) ===== -->
+<text x="1155" y="128" class="lbl" text-anchor="middle">ถังหลังคา</text>
+<path d="M1122 238 L1116 258 M1188 238 L1194 258 M1122 250 H1188" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
+<rect x="1110" y="150" width="90" height="90" rx="16" fill="#0a1628"/>
+<g clip-path="url(#rClip)"><rect id="rWater" x="1111" y="200" width="88" height="40" fill="url(#gWater)"/><g id="rWaveY"><path id="rWave" class="wave" fill="#38bdf8"/></g></g>
+<rect x="1110" y="150" width="90" height="90" rx="16" fill="url(#gSteel)" opacity=".3"/>
+<g stroke="#e2e8f0" stroke-opacity=".35" stroke-width="2"><line x1="1111" y1="170" x2="1199" y2="170"/><line x1="1111" y1="222" x2="1199" y2="222"/></g>
+<rect x="1110" y="150" width="90" height="90" rx="16" fill="none" stroke="#cbd5e1" stroke-opacity=".8" stroke-width="1.5"/>
+<rect x="1176" y="136" width="13" height="10" rx="2" fill="#e2e8f0"/><path d="M1178 146 h9 l2 5 h-13z" fill="#94a3b8"/>
+<text x="1155" y="176" class="tag" text-anchor="middle" style="fill:#e0f2fe">LT-02</text>
+<text x="1155" y="206" class="lvl" id="rTxt">--%</text>
+<rect x="1100" y="256" width="110" height="10" rx="2" fill="#334155"/>
+<rect x="1105" y="264" width="100" height="396" fill="url(#gDorm)" filter="url(#shadow)"/>
+<g stroke="#64748b" stroke-opacity=".6"><line x1="1105" y1="330" x2="1205" y2="330"/><line x1="1105" y1="396" x2="1205" y2="396"/><line x1="1105" y1="462" x2="1205" y2="462"/><line x1="1105" y1="528" x2="1205" y2="528"/><line x1="1105" y1="594" x2="1205" y2="594"/></g>
+<g id="bwin"></g>
+<rect x="1141" y="618" width="28" height="42" rx="2" fill="#1e3a8a"/><rect x="1136" y="612" width="38" height="6" fill="#475569"/>
+<text x="1155" y="698" class="lbl" text-anchor="middle">หอพัก</text>
+
+<!-- ===== LEGEND ===== -->
+<g transform="translate(30 482)">
+  <rect width="290" height="166" rx="12" fill="#0d1628" fill-opacity=".92" stroke="#1e2a40"/>
+  <text x="16" y="26" class="sub" style="fill:#cbd5e1;font-weight:600">สัญลักษณ์</text>
+  <g class="sub">
+    <line x1="16" y1="50" x2="46" y2="50" stroke="#60a5fa" stroke-width="5" stroke-linecap="round"/><text x="58" y="54">น้ำประปา (ยังไม่กรอง)</text>
+    <line x1="16" y1="74" x2="46" y2="74" stroke="#22d3ee" stroke-width="5" stroke-linecap="round"/><text x="58" y="78">น้ำผ่านชุดกรองแล้ว</text>
+    <line x1="16" y1="98" x2="46" y2="98" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/><text x="58" y="102">น้ำผ่านบายพาส (ไม่กรอง)</text>
+    <circle cx="31" cy="124" r="5" fill="#4ade80" filter="url(#glow)"/><text x="58" y="128">ปั๊มเดิน</text>
+    <circle cx="146" cy="124" r="5" fill="#ef4444"/><text x="166" y="128">Interlock</text>
+    <circle cx="31" cy="149" r="5.5" fill="#fbbf24" stroke="#0f172a"/><text x="58" y="153">วาล์วเปิด</text>
+    <circle cx="146" cy="149" r="5.5" fill="#475569" stroke="#0f172a"/><text x="166" y="153">วาล์วปิด</text>
+  </g>
+</g>
+<g id="gauges"></g>
+<g id="chips"></g>
+</svg>
+
+    </div>
+  </section>
+
+  <section class="panel trends">
+    <div class="trend"><h3><span><svg class="i"><use href="#i-chart"/></svg>แนวโน้มระดับน้ำ</span><span class="legend"><span style="--c:#38bdf8"><i></i>LT-01</span><span style="--c:#34d399"><i></i>LT-02</span></span></h3><canvas id="ch1"></canvas></div>
+    <div class="trend"><h3><span><svg class="i"><use href="#i-chart"/></svg>หลังชุดกรอง</span><span class="legend"><span style="--c:var(--vio)"><i></i>PT-02 bar</span><span style="--c:var(--fil)"><i></i>FT-02 m³/h</span><span style="--c:var(--byp)"><i style="height:10px;opacity:.35"></i>บายพาสเปิด</span></span></h3><canvas id="ch2"></canvas></div>
+  </section>
+</div>
+
+<aside class="col side">
+  <section class="card bp">
+    <div class="chead"><div><span class="cic"><svg class="i"><use href="#i-valve"/></svg></span><div><h3>บายพาสอัตโนมัติ</h3><small>XV-01 • วาล์วท่อน้ำไม่ผ่านกรอง → บ้านพัก</small></div></div><span class="state closed" id="bpState">ปิด</span></div>
+    <div class="valve"><span>ตำแหน่ง</span><div class="track"><i id="bpPos"></i></div><b id="bpPosT">0%</b></div>
+    <div class="seg" id="bpSeg"><button data-m="AUTO">AUTO</button><button data-m="OPEN">บังคับเปิด</button><button data-m="CLOSE">บังคับปิด</button></div>
+    <div style="height:12px"></div>
+    <div class="cond" id="cP"><span class="lamp"></span><div><b>แรงดันหลังกรองต่ำ</b><small>PT-02 &lt; <input class="num" type="number" id="spP" step="0.1" min="0.2" max="3" aria-label="ค่าตั้งแรงดันต่ำ"> bar</small></div><output id="cPv">--<small>bar</small></output></div>
+    <div class="or">หรือ</div>
+    <div class="cond" id="cF"><span class="lamp"></span><div><b>น้ำไหลผ่านกรองอ่อน</b><small>FT-02 &lt; <input class="num" type="number" id="spF" step="0.1" min="0.2" max="4" aria-label="ค่าตั้งอัตราไหลต่ำ"> m³/h</small></div><output id="cFv">--<small>m³/h</small></output></div>
+    <div class="delays"><label>หน่วงเปิด <input class="num" type="number" id="spOn" step="1" min="1" max="120" aria-label="หน่วงเวลาก่อนเปิด"> วิ</label><label>หน่วงปิด <input class="num" type="number" id="spOff" step="1" min="1" max="600" aria-label="หน่วงเวลาก่อนปิด"> วิ</label></div>
+    <div class="tmr"><span id="tmrL">ไม่มีการนับเวลา</span><b id="tmrT">–</b><div class="tb"><i id="tmrB"></i></div></div>
+    <p class="note">เปิดเมื่อเงื่อนไขใดเงื่อนไขหนึ่งเป็นจริงต่อเนื่อง <b id="nOn">5</b> วิ ขณะ P-01 เดิน • ปิดเมื่อ PT-02 &gt; <b id="nP">1.4</b> bar <b>และ</b> FT-02 &gt; <b id="nF">1.8</b> m³/h ต่อเนื่อง <b id="nOff">10</b> วิ หรือเมื่อ P-01 หยุด</p>
+  </section>
+
+  <section class="card">
+    <div class="chead"><div><span class="cic"><svg class="i"><use href="#i-filter"/></svg></span><div><h3>สภาพชุดกรอง F-01</h3><small>ความต้านทานเพิ่มขึ้นตามปริมาณน้ำที่กรอง</small></div></div><span class="state closed" id="fState">ปกติ</span></div>
+    <div class="kv first"><span>ΔP คร่อมชุดกรอง</span><b id="fDp">--</b></div>
+    <div class="meter"><i id="fBar"></i></div>
+    <div class="kv first" style="padding-top:0"><span>ระดับการอุดตัน</span><b id="fClog">--</b></div>
+    <div class="btns" style="margin-top:8px"><button class="btn pri" id="bBw"><svg class="i"><use href="#i-refresh"/></svg>ล้างย้อน (Backwash)</button></div>
+  </section>
+
+  <section class="card">
+    <div class="chead"><div><span class="cic"><svg class="i"><use href="#i-pump"/></svg></span><div><h3>ปั๊ม</h3><small>AUTO: ควบคุมตามระดับถัง</small></div></div></div>
+    <div class="seg" id="pSeg"><button data-m="1">AUTO</button><button data-m="0">MANUAL</button></div>
+    <div style="height:6px"></div>
+    <div class="pump" style="border-top:0"><span class="pic" id="p1i"><svg class="i"><use href="#i-pump"/></svg></span><div><b>P-01 ดันน้ำเข้ากรอง</b><small>เดิน ≤35% • หยุด ≥92% (LT-01)</small></div><span class="state stop" id="p1s">หยุด</span><button class="btn" id="p1b"><svg class="i"><use href="#i-power"/></svg><span>เดิน</span></button></div>
+    <div class="pump"><span class="pic" id="p2i"><svg class="i"><use href="#i-pump"/></svg></span><div><b>P-02 ส่งขึ้นหลังคา</b><small>เดิน ≤35% • หยุด ≥95% (LT-02)</small></div><span class="state stop" id="p2s">หยุด</span><button class="btn" id="p2b"><svg class="i"><use href="#i-power"/></svg><span>เดิน</span></button></div>
+  </section>
+
+  <section class="card sim-only" id="scen">
+    <div class="chead"><div><span class="cic"><svg class="i"><use href="#i-flask"/></svg></span><div><h3>ทดสอบสถานการณ์</h3><small>ดูการตอบสนองของบายพาส</small></div></div></div>
+    <div class="btns">
+      <button class="btn amb" id="sClog"><svg class="i"><use href="#i-alert"/></svg>ไส้กรองอุดตัน</button>
+      <button class="btn amb" id="sSup"><svg class="i"><use href="#i-gauge"/></svg><span>แรงดันประปาตก</span></button>
+      <button class="btn" id="sNorm"><svg class="i"><use href="#i-check"/></svg>คืนสภาพปกติ</button>
+    </div>
+    <div class="btns" style="margin-top:10px">
+      <select id="spd" aria-label="ความเร็วการจำลอง"><option value="1">ความเร็ว 1×</option><option value="4" selected>ความเร็ว 4×</option><option value="10">ความเร็ว 10×</option><option value="30">ความเร็ว 30×</option></select>
+      <button class="btn" id="bPause"><svg class="i"><use href="#i-pause"/></svg><span>หยุดชั่วคราว</span></button>
+      <button class="btn" id="bReset"><svg class="i"><use href="#i-reset"/></svg>เริ่มใหม่</button>
+    </div>
+  </section>
+
+  <section class="card live-only" id="liveCard">
+    <div class="chead"><div><span class="cic"><svg class="i"><use href="#i-sheet"/></svg></span><div><h3>แหล่งข้อมูล</h3><small>Google Sheet • ชีต LiveData</small></div></div><span class="state run" id="lvState">LIVE</span></div>
+    <div class="kv first"><span>อัปเดตล่าสุดจาก PLC</span><b id="lvUpd">–</b></div>
+    <div class="kv"><span>อ่านค่าทุก</span><b id="lvPoll">–</b></div>
+    <div class="btns" style="margin-top:8px"><a class="btn" id="lvLink" href="#" target="_blank" rel="noopener"><svg class="i"><use href="#i-link"/></svg>เปิดชีต</a></div>
+    <p class="note">คำสั่งจากหน้าจอจะถูกบันทึกในชีต Commands (สถานะ PENDING) ให้ PLC/Gateway รับไปทำ แล้วค่าจริงจะสะท้อนกลับมาที่ LiveData</p>
+  </section>
+</aside>
+</div>
+
+<section class="panel" id="galleryPanel" style="margin-top:14px">
+  <div class="phead"><h2><svg class="i"><use href="#i-camera"/></svg>ภาพหน้างาน</h2><small>คลิกรูปเพื่อขยาย • ตั้งค่ารูปใน Code.gs (CONFIG.PHOTOS)</small></div>
+  <div class="gallery" id="gallery"></div>
+</section>
+
+<section class="panel events" style="margin-top:14px">
+  <div><h3><svg class="i"><use href="#i-bell"/></svg>สัญญาณเตือนที่เกิดอยู่</h3><div id="alms"></div></div>
+  <div><h3><svg class="i"><use href="#i-list"/></svg>บันทึกเหตุการณ์</h3><div class="log" id="log"></div></div>
+</section>
+</div>
+
+<footer>ต้นแบบหน้าจอ HMI • โหมดจำลองใช้ค่าสมมติ ไม่ได้ยืนยันขนาดถัง อัตราปั๊ม หรือการเดินท่อหน้างาน • ระบบจริงควรเขียนลอจิกบายพาสและ interlock ไว้ใน PLC ส่วน HMI แสดงสถานะตอบกลับจริง (limit switch ของวาล์ว)</footer>
+
+<div class="lb" id="lb" hidden><button class="ibtn" id="lbX" aria-label="ปิด"><svg class="i"><use href="#i-x"/></svg></button><figure><img id="lbImg" alt=""><figcaption id="lbCap"></figcaption></figure></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>window.__BOOT__ = {};</script>
+<script>
+(function () {
+'use strict';
+
+/* ================= boot / environment ================= */
+const DEF_PHOTOS = [
+  {title:'ปั๊ม P-01 ดันน้ำเข้ากรอง',icon:'i-pump'},{title:'ชุดกรอง F-01 (4 ถัง)',icon:'i-filter'},{title:'วาล์วบายพาส XV-01',icon:'i-valve'},
+  {title:'ถังพักน้ำพื้นดิน LT-01',icon:'i-tank'},{title:'ปั๊ม P-02 ส่งขึ้นหลังคา',icon:'i-pump'},{title:'ถังหลังคาหอพัก LT-02',icon:'i-building'}];
+const BOOT = Object.assign({title:'ระบบกรองน้ำ & ส่งน้ำ 2 จุด',site:'บ้านพักอาศัย + หอพัก',mode:'SIM',pollMs:5000,logToSheet:false,sheetUrl:'',embed:false,view:'full',sp:{pLow:1,fLow:1.2,dOn:5,dOff:10},photos:DEF_PHOTOS}, window.__BOOT__ || {});
+const HAS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
+if (!HAS_GAS) { // local preview: allow ?embed=1&view=process
+  const q = new URLSearchParams(location.search);
+  if (q.get('embed') === '1') BOOT.embed = true;
+  if (q.get('view')) BOOT.view = q.get('view');
+}
+const LIVE = BOOT.mode === 'SHEET' && !!HAS_GAS;
+const $ = id => document.getElementById(id), NS = 'http://www.w3.org/2000/svg';
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function call(fn, args, ok, fail) {
+  if (!HAS_GAS) { if (fail) fail(new Error('offline')); return; }
+  google.script.run.withSuccessHandler(ok || function () {}).withFailureHandler(fail || function (e) { toast('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ: ' + (e && e.message || e), 'bad'); })[fn].apply(null, args || []);
+}
+let toastT;
+function toast(msg, kind) { const t = $('toast'); t.textContent = msg; t.className = 'toast show ' + (kind || ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', 3200); }
+
+document.body.classList.toggle('embed', !!BOOT.embed);
+document.body.classList.toggle('is-live', LIVE);
+document.body.dataset.view = BOOT.view;
+$('title').textContent = BOOT.title; $('site').textContent = BOOT.site; document.title = BOOT.title;
+
+/* ================= build SVG parts ================= */
+const PIPES = [['raw0','M12 250 H40','raw'],['raw1','M100 250 H158','raw'],['raw2','M222 250 H370','raw'],['bpA','M255 250 V430 H516','byp'],['bpB','M564 430 H800','byp'],
+  ['fil','M650 250 H800','fil'],['mix','M855 462 V548','mix'],['g2p','M930 640 H983','fil'],['p2r','M1047 640 H1070 V200 H1110','fil'],['dem','M1200 200 H1235 V620 H1205','fil']];
+(() => { const g = $('pipes'); for (const [id, d, k] of PIPES) { el('path', {d, class:'pshell'}, g); el('path', {d, class:'pcore', id:'c_'+id}, g); el('path', {d, class:'flow '+k, id:'f_'+id}, g); } })();
+
+function pumpV(slot, cx, cy, id) { // vertical in-line multistage pump + motor
+  const p = el('g', {class:'pmp', id}, $(slot)), defs = $('defs');
+  el('rect', {x:cx-34, y:cy+17, width:68, height:8, rx:2, fill:'#1e293b'}, p);
+  el('rect', {x:cx-36, y:cy-14, width:8, height:28, rx:1.5, fill:'url(#gSteelV)'}, p);
+  el('rect', {x:cx+28, y:cy-14, width:8, height:28, rx:1.5, fill:'url(#gSteelV)'}, p);
+  el('rect', {x:cx-28, y:cy-17, width:56, height:34, rx:6, fill:'url(#gSteel)'}, p);
+  el('rect', {x:cx-17, y:cy-72, width:34, height:56, rx:3, fill:'url(#gSteel)'}, p);
+  for (let k = 0; k < 4; k++) el('line', {x1:cx-17, x2:cx+17, y1:cy-60+k*12, y2:cy-60+k*12, stroke:'#64748b', 'stroke-width':1}, p);
+  el('line', {x1:cx-21, y1:cy-74, x2:cx-21, y2:cy-16, stroke:'#cbd5e1', 'stroke-width':2}, p);
+  el('line', {x1:cx+21, y1:cy-74, x2:cx+21, y2:cy-16, stroke:'#cbd5e1', 'stroke-width':2}, p);
+  el('rect', {x:cx-20, y:cy-90, width:40, height:18, rx:3, fill:'#334155'}, p);
+  const cp = el('clipPath', {id:'clip_'+id}, defs); el('rect', {x:cx-10, y:cy-86, width:20, height:10}, cp);
+  const w = el('g', {'clip-path':'url(#clip_'+id+')'}, p);
+  el('rect', {x:cx-10, y:cy-86, width:20, height:10, fill:'#0b1220'}, w);
+  const st = el('g', {class:'coup'}, w); for (let k = -3; k < 3; k++) el('rect', {x:cx+k*8+1, y:cy-86, width:3, height:10, fill:'#94a3b8'}, st);
+  el('rect', {x:cx-24, y:cy-142, width:48, height:52, rx:7, fill:'url(#gMotor)'}, p);
+  for (let k = 0; k < 8; k++) el('line', {x1:cx-24, x2:cx+24, y1:cy-135+k*6, y2:cy-135+k*6, stroke:'#062014', 'stroke-opacity':.45}, p);
+  el('rect', {x:cx-8, y:cy-121, width:16, height:10, rx:1, fill:'#e2e8f0', opacity:.85}, p);
+  el('rect', {x:cx+24, y:cy-128, width:11, height:17, rx:2, fill:'#14532d'}, p);
+  el('rect', {x:cx-20, y:cy-152, width:40, height:12, rx:5, fill:'#1f2937'}, p);
+  el('rect', {x:cx-18, y:cy-140, width:5, height:48, rx:2, fill:'#fff', opacity:.16}, p);
+  el('rect', {x:cx-28, y:cy-156, width:56, height:70, rx:9, class:'pring'}, p);
+  el('circle', {cx:cx+29.5, cy:cy-119.5, r:3.5, class:'led'}, p);
+}
+pumpV('pumpSlot1', 190, 250, 'pmp1');
+pumpV('pumpSlot2', 1015, 640, 'pmp2');
+
+(() => { const g = $('vessels'), media = ['#64748b', '#1f2937', '#c8963e', '#e2e8f0'];
+  for (let i = 0; i < 4; i++) { const x = 390 + 66 * i, v = el('g', {class:'vessel', id:'v'+i}, g);
+    el('rect', {x:x+13, y:156, width:24, height:15, rx:3, fill:'#111827'}, v);
+    el('rect', {x:x+17, y:159, width:10, height:5, rx:1, fill:'#0ea5e9', opacity:.85}, v);
+    el('path', {d:`M${x} 198 Q${x} 171 ${x+25} 171 Q${x+50} 171 ${x+50} 198 V322 Q${x+50} 332 ${x+40} 332 H${x+10} Q${x} 332 ${x} 322 Z`, fill:'url(#gFRP)'}, v);
+    el('rect', {x:x+9, y:194, width:32, height:126, rx:8, fill:'#081424'}, v);
+    el('rect', {x:x+9, y:194, width:32, height:60, rx:8, class:'vw'}, v);
+    el('rect', {x:x+9, y:250, width:32, height:70, rx:7, fill:media[i]}, v);
+    if (i === 0) for (let k = 0; k < 12; k++) el('circle', {cx:x+14+(k%4)*7.5, cy:259+Math.floor(k/4)*20, r:3.5, fill:'#94a3b8'}, v);
+    if (i === 1) for (let k = 0; k < 16; k++) el('circle', {cx:x+13+(k%4)*8, cy:258+Math.floor(k/4)*16, r:1.4, fill:'#475569'}, v);
+    if (i === 2) for (let k = 0; k < 16; k++) el('circle', {cx:x+13+(k%4)*8, cy:258+Math.floor(k/4)*16, r:2.3, fill:'#fde68a'}, v);
+    if (i === 3) for (let k = 0; k < 5; k++) el('line', {x1:x+12, x2:x+38, y1:258+k*13, y2:258+k*13, stroke:'#94a3b8', 'stroke-width':1.5}, v);
+    el('rect', {x:x+9, y:250, width:32, height:70, rx:7, fill:'#5b3413', opacity:0, class:'clog'}, v);
+    for (let k = 0; k < 3; k++) el('circle', {cx:x+16+k*9, cy:246, r:1.8+k%2, class:'bb', style:`animation-delay:${(i*.3+k*.6).toFixed(2)}s`}, v);
+    el('rect', {x:x+9, y:194, width:32, height:126, rx:8, fill:'none', stroke:'#93c5fd', 'stroke-opacity':.4}, v);
+    el('rect', {x:x+3, y:186, width:4, height:134, rx:2, fill:'#fff', opacity:.2}, v);
+  } })();
+(() => { const g = $('bwin'); let n = 0; for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) {
+  const x = 1115 + c * 30, y = 280 + r * 66; el('rect', {x, y, width:20, height:30, rx:2, class:'win', id:'bw'+(n++), stroke:'#f8fafc', 'stroke-width':1.5}, g);
+  el('rect', {x:x-3, y:y+33, width:26, height:4, rx:1, fill:'#64748b'}, g); } })();
+
+function gauge(x, id) { // dial pressure gauge on a stem, centre (x,190)
+  const g = $('gauges'), cy = 190;
+  el('line', {x1:x, y1:242, x2:x, y2:210, stroke:'#94a3b8', 'stroke-width':4}, g);
+  el('rect', {x:x-7, y:218, width:14, height:9, rx:2, fill:'#475569'}, g);
+  el('circle', {cx:x, cy, r:20, fill:'url(#gSteel)', filter:'url(#shadow)'}, g);
+  el('circle', {cx:x, cy, r:16.5, fill:'#f8fafc'}, g);
+  const pt = (a, r) => [x + r * Math.sin(a * Math.PI / 180), cy - r * Math.cos(a * Math.PI / 180)];
+  const [ax, ay] = pt(67.5, 14), [bx, by] = pt(135, 14);
+  el('path', {d:`M${ax} ${ay} A14 14 0 0 1 ${bx} ${by}`, stroke:'#dc2626', 'stroke-width':2.5, fill:'none'}, g);
+  for (let v = 0; v <= 6; v++) { const a = -135 + 45 * v, [x1, y1] = pt(a, 11.5), [x2, y2] = pt(a, 15.5); el('line', {x1, y1, x2, y2, stroke:'#0f172a', 'stroke-width':1.2}, g); }
+  const t = el('text', {x, y:cy + 10, 'text-anchor':'middle', style:'font:600 5px sans-serif;fill:#475569'}, g); t.textContent = 'bar';
+  const n = el('g', {id, transform:`rotate(-135 ${x} ${cy})`}, g);
+  el('line', {x1:x, y1:cy + 3, x2:x, y2:cy - 13, stroke:'#dc2626', 'stroke-width':1.8, 'stroke-linecap':'round'}, n);
+  el('circle', {cx:x, cy, r:2.5, fill:'#0f172a'}, g);
+  el('path', {d:`M${x-12} ${cy-6} A13 13 0 0 1 ${x+4} ${cy-13}`, stroke:'#fff', 'stroke-opacity':.8, 'stroke-width':1.5, fill:'none'}, g);
+}
+gauge(300, 'nPT01'); gauge(700, 'nPT02');
+
+(() => { const g = $('chips');
+  const C = [['FT01','FT-01',70,280,null,'m³/h'],['PT01','PT-01',300,112,[156,168],'bar'],['PT02','PT-02',700,112,[156,168],'bar'],['FT02','FT-02',745,318,[264,318],'m³/h']];
+  for (const [id, tag, x, y, lead, u] of C) {
+    if (lead) el('line', {x1:x, y1:lead[0], x2:x, y2:lead[1], class:'leader'}, g);
+    const c = el('g', {class:'chip', id:'ch_'+id}, g); el('rect', {x:x-56, y, width:112, height:44, rx:9}, c);
+    el('text', {x:x-46, y:y+16, class:'tag'}, c).textContent = tag;
+    el('text', {x:x-46, y:y+36, class:'val', id:'sv_'+id}, c).textContent = '--';
+    el('text', {x:x+46, y:y+36, class:'sub', 'text-anchor':'end'}, c).textContent = u;
+  } })();
+function wave(x, w) { const n = Math.ceil((w + 120) / 60); let d = `M${x-60} 0`; for (let i = 0; i < n; i++) d += ' q15 -4 30 0 q15 4 30 0'; return d + ` L${x-60+n*60} 14 L${x-60} 14 Z`; }
+$('gWave').setAttribute('d', wave(781, 148)); $('rWave').setAttribute('d', wave(1111, 88));
+
+/* ================= model ================= */
+const SP = Object.assign({pLow:1, fLow:1.2, dOn:5, dOff:10}, BOOT.sp);
+let S, LOG = [], QUEUE = [];
+const pad = v => String(v).padStart(2, '0');
+const fmt = t => { t = Math.floor(t); return [t / 3600 | 0, (t / 60 | 0) % 60, t % 60].map(pad).join(':'); };
+const nowSec = () => { const d = new Date(); return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds(); };
+function log(l, m, important) {
+  LOG.unshift({t:S.t, l, m}); if (LOG.length > 150) LOG.pop(); S.logDirty = true;
+  if (important && BOOT.logToSheet && HAS_GAS) QUEUE.push({level:l, msg:m, mode:LIVE ? 'LIVE' : 'SIM', t:fmt(S.t)});
+}
+function init() {
+  S = {t:LIVE ? nowSec() : 0, g:LIVE ? 0 : 40, r:LIVE ? 0 : 38, p1:!LIVE, p2:false, auto:true, speed:+$('spd').value, paused:false, c:.18, cRamp:false, supplyLow:false, bw:false,
+    bp:{mode:'AUTO', open:false, pos:0, tOn:0, tOff:0, lowP:false, lowF:false}, trip2:false, demand:.5, H:{PT01:0,PT02:0,FT01:0,FT02:0,FT03:0,dP:0}, hist:[], act:{}, logDirty:true, lastLive:0, liveUpd:null};
+  LOG = [];
+  log('info', LIVE ? 'เชื่อมต่อโหมดข้อมูลจริง (Google Sheet)' : 'เริ่มการจำลอง – โหมด AUTO, P-01 เดิน');
+  if (!LIVE) hyd();
+}
+function hyd() { const H = S.H, Ps = S.supplyLow ? .25 : 1.2, run = S.p1; H.Ps = Ps;
+  H.PT01 = run ? Ps + (S.supplyLow ? .95 : 1.8) : Ps;
+  H.dP = run ? .22 + 2.4 * Math.pow(S.c, 1.6) : 0;
+  H.PT02 = run ? Math.max(0, H.PT01 - H.dP - .08) : Ps * .9;
+  H.FT02 = run ? 4.8 * Math.sqrt(Math.max(0, H.PT02 - .35) / 2.3) : 0;
+  H.FT03 = run ? S.bp.pos * 3 * Math.sqrt(Math.max(0, H.PT01 - .3) / 2.7) : 0;
+  H.FT01 = H.FT02 + H.FT03; }
+function bypass(dt) { const B = S.bp, H = S.H;
+  B.lowP = S.p1 && H.PT02 < SP.pLow; B.lowF = S.p1 && H.FT02 < SP.fLow;
+  if (B.mode === 'OPEN') { B.open = true; B.tOn = B.tOff = 0; }
+  else if (B.mode === 'CLOSE') { B.open = false; B.tOn = B.tOff = 0; }
+  else if (!B.open) { B.tOff = 0;
+    if (B.lowP || B.lowF) { B.tOn += dt; if (B.tOn >= SP.dOn) { B.open = true; B.tOn = 0;
+      const why = [B.lowP && `แรงดันหลังกรองต่ำ (PT-02 ${H.PT02.toFixed(2)} bar)`, B.lowF && `น้ำไหลอ่อน (FT-02 ${H.FT02.toFixed(2)} m³/h)`].filter(Boolean).join(' และ ');
+      log('warn', 'AUTO: เปิดบายพาส XV-01 – ' + why, true); } } else B.tOn = 0; }
+  else { B.tOn = 0;
+    if (!S.p1) { B.open = false; B.tOff = 0; log('info', 'AUTO: P-01 หยุด → ปิดบายพาส XV-01', true); }
+    else if (H.PT02 > SP.pLow + .4 && H.FT02 > SP.fLow + .6) { B.tOff += dt; if (B.tOff >= SP.dOff) { B.open = false; B.tOff = 0; log('ok', 'AUTO: แรงดันและอัตราไหลหลังกรองกลับปกติ → ปิดบายพาส XV-01', true); } }
+    else B.tOff = 0; }
+  const goal = B.open ? 1 : 0, d = goal - B.pos; B.pos += Math.sign(d) * Math.min(Math.abs(d), dt / 4); }
+const ALM = [['sup','bad','แรงดันน้ำประปาขาเข้าต่ำ',() => S.supplyLow],['p2l','warn','PT-02 แรงดันหลังกรองต่ำ',() => S.bp.lowP],['f2l','warn','FT-02 น้ำไหลผ่านกรองอ่อน',() => S.bp.lowF],
+  ['dp','warn','ΔP ชุดกรองสูง – ควรล้างย้อน',() => S.H.dP > 1.5],['byp','warn','บายพาสเปิด – น้ำไม่ผ่านกรองเข้าบ้านพัก',() => S.bp.pos > .05],['gl','bad','LT-01 ถังพื้นดินระดับต่ำ',() => S.g <= 15 && (!LIVE || S.lastLive)],
+  ['gh','warn','LT-01 ถังพื้นดินระดับสูง',() => S.g >= 96],['rl','bad','LT-02 ถังหลังคาระดับต่ำ',() => S.r <= 15 && (!LIVE || S.lastLive)],['t2','bad','P-02 Interlock กันเดินแห้ง',() => S.trip2]];
+function alarms() { for (const [k, l, m, f] of ALM) { const on = f();
+  if (on && S.act[k] == null) { S.act[k] = S.t; log(l, 'ALARM: ' + m, l === 'bad'); }
+  else if (!on && S.act[k] != null) { delete S.act[k]; log('ok', 'คืนสู่ปกติ: ' + m); } } }
+function step(dt) { S.t += dt; const H = S.H;
+  if (S.auto) {
+    if (S.g <= 35 && !S.p1) { S.p1 = true; log('info', 'AUTO: LT-01 ต่ำ → เดิน P-01'); }
+    if (S.g >= 92 && S.p1) { S.p1 = false; log('info', 'AUTO: LT-01 ถึงระดับสูง → หยุด P-01'); }
+    if (S.r <= 35 && S.g > 15 && !S.p2 && !S.trip2) { S.p2 = true; log('info', 'AUTO: LT-02 ต่ำ → เดิน P-02'); }
+    if (S.p2 && S.r >= 95) { S.p2 = false; log('info', 'AUTO: LT-02 เต็ม → หยุด P-02'); } }
+  if (S.p2 && S.g <= 8) { S.p2 = false; S.trip2 = true; log('bad', 'INTERLOCK: LT-01 ต่ำมาก → หยุด P-02 กันเดินแห้ง', true); }
+  if (S.trip2 && S.g > 15) S.trip2 = false;
+  if (S.p1 && S.g >= 99) { S.p1 = false; log('warn', 'INTERLOCK: LT-01 สูงสุด → หยุด P-01', true); }
+  if (S.p2 && S.r >= 99.5) { S.p2 = false; log('warn', 'INTERLOCK: LT-02 สูงสุด → หยุด P-02', true); }
+  if (S.bw) { S.c = Math.max(.06, S.c - .1 * dt); if (S.c <= .06) { S.bw = false; log('ok', 'ล้างย้อนเสร็จ – ΔP ชุดกรองกลับสู่ปกติ', true); } }
+  else if (S.cRamp) { S.c = Math.min(.95, S.c + .035 * dt); if (S.c >= .95) S.cRamp = false; }
+  else S.c = Math.min(.97, S.c + dt * .0005 * ((H.FT02 || 0) / 4.6));
+  hyd(); bypass(dt); hyd(); alarms();
+  S.demand = Math.max(.12, .55 + .4 * Math.sin(S.t / 40) + .15 * Math.sin(S.t / 9));
+  S.g += (H.FT01 * .26 - (S.p2 ? 1.5 : 0)) * dt;
+  S.r += ((S.p2 ? 2.4 : 0) - (S.r > 0 ? S.demand : 0)) * dt;
+  S.g = clamp(S.g, 0, 100); S.r = clamp(S.r, 0, 100); }
+function pushHist() { S.hist.push({g:S.g, r:S.r, p:S.H.PT02, f:S.H.FT02, b:S.bp.pos}); if (S.hist.length > 240) S.hist.shift(); }
+
+/* ---------- LIVE mode (Google Sheet) ---------- */
+function applyLive(res) {
+  const d = (res && res.values) || {}, n = k => { const v = Number(d[k]); return isFinite(v) ? v : 0; }, has = k => d[k] !== undefined && d[k] !== '';
+  const wasP1 = S.p1, wasP2 = S.p2, wasOpen = S.bp.open;
+  S.t = nowSec();
+  S.p1 = n('P1_RUN') > 0; S.p2 = n('P2_RUN') > 0; S.trip2 = n('P2_TRIP') > 0;
+  S.g = clamp(n('LT01'), 0, 100); S.r = clamp(n('LT02'), 0, 100);
+  const H = S.H; H.PT01 = n('PT01'); H.PT02 = n('PT02'); H.FT01 = n('FT01'); H.FT02 = n('FT02'); H.FT03 = n('FT03');
+  H.dP = S.p1 ? Math.max(0, H.PT01 - H.PT02) : 0;
+  S.bp.pos = clamp(n('XV01_POS'), 0, 100) / 100; S.bp.open = S.bp.pos > .5;
+  if (has('XV01_MODE') && ['AUTO','OPEN','CLOSE'].indexOf(String(d.XV01_MODE).toUpperCase()) >= 0) S.bp.mode = String(d.XV01_MODE).toUpperCase();
+  if (has('MODE_AUTO')) S.auto = n('MODE_AUTO') > 0;
+  S.bp.lowP = S.p1 && H.PT02 < SP.pLow; S.bp.lowF = S.p1 && H.FT02 < SP.fLow;
+  S.supplyLow = has('PS') && n('PS') < .5;
+  S.c = clamp(Math.pow(Math.max(0, (H.dP - .22) / 2.4), 1 / 1.6), 0, 1);
+  S.demand = has('FT04') ? n('FT04') / 2 : .5;
+  if (S.lastLive) {
+    if (wasP1 !== S.p1) log('info', `PLC: P-01 ${S.p1 ? 'เดิน' : 'หยุด'}`);
+    if (wasP2 !== S.p2) log('info', `PLC: P-02 ${S.p2 ? 'เดิน' : 'หยุด'}`);
+    if (wasOpen !== S.bp.open) log(S.bp.open ? 'warn' : 'ok', `PLC: บายพาส XV-01 ${S.bp.open ? 'เปิด' : 'ปิด'}`);
+  }
+  S.lastLive = Date.now(); S.liveUpd = res.updated ? new Date(res.updated) : null;
+  alarms(); pushHist();
+}
+function poll() { call('getLive', [], res => { applyLive(res); setTimeout(poll, BOOT.pollMs); }, err => { toast('อ่านข้อมูลจากชีตไม่สำเร็จ: ' + (err && err.message || err), 'bad'); setTimeout(poll, BOOT.pollMs * 2); }); }
+
+/* ================= view ================= */
+const nz = a => LIVE ? 0 : (Math.random() - .5) * a;
+const needle = {};
+function drawTank(k, lvl) { const c = k === 'g' ? {top:563, bot:659} : {top:153, bot:238}; const y = c.bot - (c.bot - c.top) * lvl / 100;
+  const w = $(k + 'Water'); w.setAttribute('y', y + 5); w.setAttribute('height', Math.max(0, c.bot - y + 4));
+  $(k + 'WaveY').setAttribute('transform', `translate(0 ${y.toFixed(2)})`); $(k + 'WaveY').style.opacity = lvl > .5 ? 1 : 0;
+  $(k + 'Txt').textContent = Math.round(lvl) + '%'; if (k === 'g') $('gFall').setAttribute('y2', Math.max(566, y)); }
+function setNeedle(id, x, bar) { const target = -135 + 270 * clamp(bar, 0, 6) / 6; needle[id] = needle[id] == null ? target : needle[id] + (target - needle[id]) * .25;
+  $(id).setAttribute('transform', `rotate(${needle[id].toFixed(1)} ${x} 190)`); }
+function setFlow(id, q, on) { const f = $('f_' + id), a = on && q > .05; f.classList.toggle('on', a); $('c_' + id).classList.toggle('wet', a);
+  const d = Math.max(.3, Math.min(4, 2.4 / (q + .2))); if (Math.abs((f._d || 0) - d) > .12) { f.style.animationDuration = d.toFixed(2) + 's'; f._d = d; } }
+function kpi(id, val, dec, pct, cls) { const k = $(id); k.querySelector('.v span').textContent = val.toFixed(dec); k.querySelector('.bar i').style.width = clamp(pct, 0, 100) + '%';
+  k.classList.toggle('warn', cls === 'warn'); k.classList.toggle('bad', cls === 'bad'); }
+function st(e, txt, cls) { e.textContent = txt; e.className = 'state ' + cls; }
+let meterVol = 0;
+function ui() { const H = S.H, B = S.bp;
+  $('proc').classList.toggle('paused', S.paused && !LIVE);
+  const d = {FT01:H.FT01 > 0 ? H.FT01 + nz(.08) : 0, PT01:H.PT01 + nz(.04), PT02:H.PT02 + nz(.04), FT02:H.FT02 > 0 ? H.FT02 + nz(.08) : 0};
+  for (const k in d) { d[k] = Math.max(0, d[k]); $('sv_' + k).textContent = d[k].toFixed(2); }
+  $('ch_PT02').classList.toggle('warn', B.lowP); $('ch_FT02').classList.toggle('warn', B.lowF);
+  kpi('kFT01', d.FT01, 2, d.FT01 / 8 * 100); kpi('kPT01', d.PT01, 2, d.PT01 / 4 * 100, S.supplyLow ? 'bad' : '');
+  kpi('kPT02', d.PT02, 2, d.PT02 / 4 * 100, B.lowP ? 'warn' : ''); kpi('kFT02', d.FT02, 2, d.FT02 / 6 * 100, B.lowF ? 'warn' : '');
+  kpi('kBP', H.FT03, 2, H.FT03 / 4 * 100, B.pos > .05 ? 'warn' : ''); kpi('kLT01', S.g, 1, S.g, S.g <= 15 ? 'bad' : S.g >= 96 ? 'warn' : ''); kpi('kLT02', S.r, 1, S.r, S.r <= 15 ? 'bad' : '');
+  // instruments
+  setNeedle('nPT01', 300, d.PT01); setNeedle('nPT02', 700, d.PT02);
+  $('ftDisp').textContent = d.FT02.toFixed(2);
+  const md = $('mDial'); md.classList.toggle('on', H.FT01 > .05); if (H.FT01 > .05) md.style.animationDuration = Math.max(.25, 3 / H.FT01).toFixed(2) + 's';
+  $('mCount').textContent = String(Math.floor(meterVol) % 100000).padStart(5, '0');
+  // flows
+  setFlow('raw0', H.FT01, S.p1); setFlow('raw1', H.FT01, S.p1); setFlow('raw2', H.FT01, S.p1); setFlow('bpA', H.FT03, S.p1); setFlow('bpB', H.FT03, S.p1);
+  setFlow('fil', H.FT02, S.p1); setFlow('mix', H.FT01, S.p1); setFlow('g2p', 3.5, S.p2); setFlow('p2r', 3.5, S.p2); setFlow('dem', S.demand * 2, S.r > .5);
+  $('gFall').classList.toggle('on', S.p1);
+  $('pmp1').setAttribute('class', 'pmp' + (S.p1 ? ' run' : '')); $('pmp2').setAttribute('class', 'pmp' + (S.p2 ? ' run' : S.trip2 ? ' trip' : ''));
+  for (let i = 0; i < 4; i++) { $('v' + i).setAttribute('class', 'vessel' + (S.p1 ? ' flowing' : '')); $('v' + i).querySelector('.clog').setAttribute('opacity', (Math.pow(S.c, 1.3) * .8).toFixed(2)); }
+  const on = Math.floor(S.t / 7); for (let i = 0; i < 15; i++) $('bw' + i).classList.toggle('lit', S.r > .5 && ((i * 7 + on) % 5) < 2 + Math.round(S.demand * 2));
+  for (let i = 1; i <= 4; i++) $('hw' + i).classList.toggle('lit', (S.p1 && i % 2 === 1) || i === 4);
+  // filter dP
+  $('dpT').textContent = 'ΔP ' + H.dP.toFixed(2) + ' bar'; const dpc = H.dP > 1.5 ? '#ef4444' : H.dP > .9 ? '#f59e0b' : '#22c55e';
+  $('dpBar').setAttribute('width', Math.min(44, H.dP / 3 * 44)); $('dpBar').setAttribute('fill', dpc);
+  // valve
+  const moving = B.pos > .02 && B.pos < .98, vs = moving ? 'moving' : B.pos >= .98 ? 'open' : 'closed';
+  $('xvBall').setAttribute('transform', `rotate(${(90 * (1 - B.pos)).toFixed(1)} 540 430)`);
+  $('xvBore').setAttribute('fill', B.pos > .05 ? '#f59e0b' : '#475569');
+  $('xvInd').setAttribute('fill', vs === 'open' ? '#fbbf24' : vs === 'moving' ? '#38bdf8' : '#475569');
+  const vtxt = moving ? (B.open ? 'กำลังเปิด' : 'กำลังปิด') : vs === 'open' ? 'เปิด' : 'ปิด';
+  const pc = {closed:['#172033','#334155','#94a3b8'], open:['#2a1606','#92400e','#fbbf24'], moving:['#0c2a44','#075985','#7dd3fc']}[vs];
+  $('bpPillR').setAttribute('fill', pc[0]); $('bpPillR').setAttribute('stroke', pc[1]); $('bpPillT').style.fill = pc[2]; $('bpPillT').textContent = vtxt + (B.mode !== 'AUTO' ? ' (MAN)' : '');
+  $('l1').setAttribute('fill', B.lowP ? '#f59e0b' : '#334155'); $('l2').setAttribute('fill', B.lowF ? '#f59e0b' : '#334155');
+  $('c1t').textContent = `PT-02 ${d.PT02.toFixed(2)} < ${SP.pLow.toFixed(1)} bar`; $('c2t').textContent = `FT-02 ${d.FT02.toFixed(2)} < ${SP.fLow.toFixed(1)} m³/h`;
+  // bypass card
+  st($('bpState'), vtxt, vs); $('bpPos').style.width = (B.pos * 100) + '%'; $('bpPosT').textContent = Math.round(B.pos * 100) + '%';
+  $('hBp').textContent = vtxt; $('hBp').style.color = vs === 'open' ? '#fbbf24' : vs === 'moving' ? '#7dd3fc' : '';
+  document.querySelectorAll('#bpSeg button').forEach(b => b.classList.toggle('on', b.dataset.m === B.mode));
+  $('cP').classList.toggle('hit', B.lowP); $('cF').classList.toggle('hit', B.lowF);
+  $('cPv').firstChild.textContent = d.PT02.toFixed(2); $('cFv').firstChild.textContent = d.FT02.toFixed(2);
+  let tl = 'ไม่มีการนับเวลา', tt = '–', tw = 0, tc = '#38bdf8';
+  if (LIVE) tl = 'ลอจิกและการหน่วงเวลาทำงานใน PLC';
+  else if (B.mode !== 'AUTO') tl = 'โหมดบังคับ – ลอจิกอัตโนมัติถูกข้าม';
+  else if (!B.open && B.tOn > 0) { tl = 'หน่วงเวลาก่อนเปิดบายพาส'; tt = (SP.dOn - B.tOn).toFixed(1) + ' วิ'; tw = B.tOn / SP.dOn; tc = '#f59e0b'; }
+  else if (B.open && B.tOff > 0) { tl = 'หน่วงเวลาก่อนปิดบายพาส'; tt = (SP.dOff - B.tOff).toFixed(1) + ' วิ'; tw = B.tOff / SP.dOff; tc = '#22c55e'; }
+  else if (B.open) tl = 'รอแรงดัน/อัตราไหลหลังกรองกลับปกติ';
+  $('tmrL').textContent = tl; $('tmrT').textContent = tt; $('tmrB').style.width = (tw * 100) + '%'; $('tmrB').style.background = tc;
+  $('nP').textContent = (SP.pLow + .4).toFixed(1); $('nF').textContent = (SP.fLow + .6).toFixed(1); $('nOn').textContent = SP.dOn; $('nOff').textContent = SP.dOff;
+  // filter card
+  $('fDp').textContent = H.dP.toFixed(2) + ' bar'; $('fBar').style.width = Math.min(100, H.dP / 3 * 100) + '%'; $('fBar').style.background = dpc; $('fClog').textContent = Math.round(S.c * 100) + '%';
+  if (S.bw) st($('fState'), 'กำลังล้างย้อน', 'moving'); else if (H.dP > 1.5) st($('fState'), 'ต้องล้างย้อน', 'trip'); else if (H.dP > .9) st($('fState'), 'เริ่มอุดตัน', 'open'); else st($('fState'), S.p1 ? 'ปกติ' : 'ไม่มีการไหล', 'closed');
+  $('bBw').disabled = S.bw;
+  // pumps
+  document.querySelectorAll('#pSeg button').forEach(b => b.classList.toggle('on', (b.dataset.m === '1') === S.auto));
+  st($('p1s'), S.p1 ? 'เดิน' : 'หยุด', S.p1 ? 'run' : 'stop'); st($('p2s'), S.p2 ? 'เดิน' : S.trip2 ? 'Interlock' : 'หยุด', S.p2 ? 'run' : S.trip2 ? 'trip' : 'stop');
+  $('p1i').className = 'pic' + (S.p1 ? ' run' : ''); $('p2i').className = 'pic' + (S.p2 ? ' run' : S.trip2 ? ' trip' : '');
+  $('p1b').lastChild.textContent = S.p1 ? 'หยุด' : 'เดิน'; $('p2b').lastChild.textContent = S.p2 ? 'หยุด' : 'เดิน'; $('p1b').disabled = $('p2b').disabled = S.auto;
+  $('hMode').textContent = S.auto ? 'AUTO' : 'MANUAL';
+  $('sSup').lastChild.textContent = S.supplyLow ? 'คืนแรงดันประปา' : 'แรงดันประปาตก';
+  $('bPause').querySelector('use').setAttribute('href', S.paused ? '#i-play' : '#i-pause'); $('bPause').lastChild.textContent = S.paused ? 'เล่นต่อ' : 'หยุดชั่วคราว';
+  // alarms
+  const act = ALM.filter(a => S.act[a[0]] != null); $('hAlm').textContent = act.length; $('hAlm').style.color = act.some(a => a[1] === 'bad') ? '#f87171' : act.length ? '#fbbf24' : '#4ade80';
+  $('alms').innerHTML = act.length ? act.map(a => `<div class="alm ${a[1]}"><svg class="i"><use href="#i-alert"/></svg><span>${esc(a[2])}</span><time>${fmt(S.act[a[0]])}</time></div>`).join('')
+    : '<div class="empty"><svg class="i"><use href="#i-check"/></svg>ไม่มีสัญญาณเตือน</div>';
+  if (S.logDirty) { $('log').innerHTML = LOG.map(e => `<div class="${e.l}"><time>${fmt(e.t)}</time><i></i><span>${esc(e.m)}</span></div>`).join(''); S.logDirty = false; }
+  // clock + connection
+  if (LIVE) {
+    $('clock').textContent = fmt(nowSec());
+    const age = S.lastLive ? (Date.now() - S.lastLive) : Infinity, stale = age > BOOT.pollMs * 3;
+    $('modePill').className = 'pill ' + (stale ? 'stale' : 'live'); $('modeTxt').textContent = stale ? 'ขาดการเชื่อมต่อ' : 'LIVE • Google Sheet';
+    $('lvUpd').textContent = S.liveUpd ? S.liveUpd.toLocaleTimeString('th-TH') : '–';
+    st($('lvState'), stale ? 'ขาดการเชื่อมต่อ' : 'LIVE', stale ? 'trip' : 'run');
+  } else $('clock').textContent = fmt(S.t);
+}
+function chart(cv, cfg) { const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w) return;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+  const L = 32, R = cfg.r ? 34 : 8, T = 8, Bm = 20, W = w - L - R, Hh = h - T - Bm, N = 240, hs = S.hist, n = hs.length, X = i => L + W * (i + N - n) / (N - 1), bw = W / (N - 1);
+  x.fillStyle = 'rgba(245,158,11,.14)'; hs.forEach((p, i) => { if (p.b > .05) x.fillRect(X(i) - bw / 2, T, bw + .6, Hh); });
+  x.font = '11px "IBM Plex Sans Thai",sans-serif'; x.lineWidth = 1;
+  cfg.ticks.forEach(v => { const y = Math.round(T + Hh * (1 - v / cfg.max)) + .5; x.strokeStyle = '#1a2539'; x.beginPath(); x.moveTo(L, y); x.lineTo(L + W, y); x.stroke(); x.fillStyle = '#5d6b84'; x.textAlign = 'right'; x.fillText(v, L - 6, y + 4); });
+  if (cfg.r) cfg.r.ticks.forEach(v => { const y = T + Hh * (1 - v / cfg.r.max); x.fillStyle = '#5d6b84'; x.textAlign = 'left'; x.fillText(v, L + W + 6, y + 4); });
+  (cfg.sp || []).forEach(s => { const y = T + Hh * (1 - s.v / s.max); x.setLineDash([4, 4]); x.strokeStyle = s.c; x.globalAlpha = .75; x.beginPath(); x.moveTo(L, y); x.lineTo(L + W, y); x.stroke(); x.setLineDash([]); x.globalAlpha = 1; });
+  cfg.s.forEach(s => { x.strokeStyle = s.c; x.lineWidth = 2; x.lineJoin = 'round'; x.beginPath(); hs.forEach((p, i) => { const y = T + Hh * (1 - Math.min(s.max, p[s.k]) / s.max); i ? x.lineTo(X(i), y) : x.moveTo(X(i), y); }); x.stroke(); });
+  const span = LIVE ? Math.round(240 * BOOT.pollMs / 60000) : 8;
+  x.fillStyle = '#5d6b84'; x.textAlign = 'left'; x.fillText('−' + span + ' นาที', L, h - 4); x.textAlign = 'right'; x.fillText('ขณะนี้', L + W, h - 4); }
+function charts() {
+  chart($('ch1'), {max:100, ticks:[0,25,50,75,100], s:[{k:'g', c:'#38bdf8', max:100}, {k:'r', c:'#34d399', max:100}]});
+  chart($('ch2'), {max:4, ticks:[0,1,2,3,4], r:{max:6, ticks:[0,2,4,6]}, sp:[{v:SP.pLow, max:4, c:'#a78bfa'}, {v:SP.fLow, max:6, c:'#22d3ee'}], s:[{k:'p', c:'#a78bfa', max:4}, {k:'f', c:'#22d3ee', max:6}]}); }
+
+/* ================= gallery / lightbox ================= */
+function renderGallery() {
+  const list = (BOOT.photos && BOOT.photos.length) ? BOOT.photos : DEF_PHOTOS;
+  $('gallery').innerHTML = list.map((p, i) => {
+    const url = /^https:\/\//.test(p.url || '') ? p.url : '', icon = /^i-[a-z]+$/.test(p.icon || '') ? p.icon : 'i-camera';
+    return url ? `<button class="ph has" data-i="${i}" aria-label="ขยายรูป ${esc(p.title)}"><img src="${esc(url)}" alt="${esc(p.title)}" loading="lazy"><span class="cap">${esc(p.title)}</span></button>`
+      : `<div class="ph empty"><svg class="i"><use href="#${icon}"/></svg><b>${esc(p.title)}</b><small>ยังไม่มีรูป • ใส่ลิงก์ใน CONFIG.PHOTOS</small></div>`;
+  }).join('');
+  $('gallery').querySelectorAll('.ph.has').forEach(b => b.onclick = () => { const p = list[+b.dataset.i]; $('lbImg').src = p.url; $('lbImg').alt = p.title; $('lbCap').textContent = p.title; $('lb').hidden = false; });
+}
+function closeLb() { $('lb').hidden = true; $('lbImg').removeAttribute('src'); }
+$('lbX').onclick = closeLb; $('lb').onclick = e => { if (e.target === $('lb')) closeLb(); };
+addEventListener('keydown', e => { if (e.key === 'Escape') { closeLb(); if ($('procPanel').classList.contains('max')) toggleMax(); } });
+
+/* ================= controls ================= */
+function cmd(target, action, local, label) {
+  if (LIVE) { call('sendCommand', [target, action], () => toast('ส่งคำสั่ง ' + label + ' แล้ว – รอ PLC ยืนยัน', 'ok')); log('info', 'ผู้ใช้: ส่งคำสั่ง ' + label); }
+  else local();
+  ui();
+}
+document.querySelectorAll('#bpSeg button').forEach(b => b.onclick = () => { const m = b.dataset.m; if (S.bp.mode === m) return;
+  const lbl = m === 'AUTO' ? 'XV-01 → AUTO' : m === 'OPEN' ? 'บังคับเปิด XV-01' : 'บังคับปิด XV-01';
+  cmd('XV01', m, () => { S.bp.mode = m; log(m === 'AUTO' ? 'info' : 'warn', 'ผู้ใช้: ' + lbl, true); }, lbl); if (LIVE) S.bp.mode = m; });
+document.querySelectorAll('#pSeg button').forEach(b => b.onclick = () => { const a = b.dataset.m === '1'; if (S.auto === a) return;
+  cmd('MODE', a ? 'AUTO' : 'MANUAL', () => { S.auto = a; log('info', a ? 'ผู้ใช้: ปั๊มกลับสู่โหมด AUTO' : 'ผู้ใช้: ปั๊มเข้าโหมด MANUAL', true); }, 'ปั๊ม → ' + (a ? 'AUTO' : 'MANUAL')); if (LIVE) S.auto = a; });
+function pumpCmd(n) { const k = 'p' + n, start = !S[k];
+  cmd('P' + n, start ? 'START' : 'STOP', () => {
+    if (start && n === 2 && S.g <= 10) { log('bad', 'ปฏิเสธคำสั่ง: LT-01 ต่ำเกินไป ห้ามเดิน P-02'); toast('ห้ามเดิน P-02: ถังพื้นดินต่ำเกินไป', 'bad'); return; }
+    if (start && n === 1 && S.g >= 99) { log('warn', 'ปฏิเสธคำสั่ง: LT-01 เต็ม ห้ามเดิน P-01'); toast('ห้ามเดิน P-01: ถังพื้นดินเต็ม', 'bad'); return; }
+    S[k] = start; log('info', `ผู้ใช้: สั่ง${start ? 'เดิน' : 'หยุด'} P-0${n}`, true); }, `${start ? 'เดิน' : 'หยุด'} P-0${n}`); }
+$('p1b').onclick = () => pumpCmd(1); $('p2b').onclick = () => pumpCmd(2);
+$('bBw').onclick = () => cmd('BACKWASH', 'START', () => { S.bw = true; S.cRamp = false; log('info', 'ผู้ใช้: เริ่มล้างย้อนชุดกรอง F-01', true); }, 'ล้างย้อน F-01');
+
+// setpoints
+const SP_IN = [['spP','pLow',.2,3,1],['spF','fLow',.2,4,1],['spOn','dOn',1,120,0],['spOff','dOff',1,600,0]];
+function fillSp() { for (const [id, k, , , dec] of SP_IN) $(id).value = SP[k].toFixed(dec); }
+let spTimer;
+SP_IN.forEach(([id, k, lo, hi, dec]) => $(id).addEventListener('change', e => {
+  const v = clamp(+e.target.value || SP[k], lo, hi); SP[k] = dec ? Math.round(v * 10) / 10 : Math.round(v); e.target.value = SP[k].toFixed(dec);
+  log('info', `ค่าตั้ง ${k} = ${SP[k]}`); clearTimeout(spTimer);
+  spTimer = setTimeout(() => call('saveSetpoints', [SP], saved => { Object.assign(SP, saved); fillSp(); toast('บันทึกค่าตั้งลงระบบแล้ว', 'ok'); }), 600);
+  ui(); charts(); }));
+
+$('sClog').onclick = () => { S.cRamp = true; S.bw = false; log('warn', 'ทดสอบ: ไส้กรองเริ่มอุดตัน (ΔP เพิ่มขึ้น)'); ui(); };
+$('sSup').onclick = () => { S.supplyLow = !S.supplyLow; log(S.supplyLow ? 'warn' : 'ok', S.supplyLow ? 'ทดสอบ: แรงดันน้ำประปาขาเข้าตก' : 'ทดสอบ: แรงดันน้ำประปากลับปกติ'); ui(); };
+$('sNorm').onclick = () => { S.supplyLow = false; S.cRamp = false; S.bw = true; log('ok', 'ทดสอบ: คืนสภาพปกติ (ล้างย้อน + แรงดันประปาปกติ)'); ui(); };
+$('spd').onchange = e => S.speed = +e.target.value;
+$('bPause').onclick = () => { S.paused = !S.paused; ui(); };
+$('bReset').onclick = () => { const sp = S.speed; init(); S.speed = sp; ui(); charts(); };
+
+// process view tools: zoom (scroll) / fit, maximize
+function setZoom(z) { $('proc').classList.toggle('zoom', z); $('bZoom').querySelector('use').setAttribute('href', z ? '#i-fit' : '#i-zoom'); $('bZoom').title = z ? 'พอดีจอ' : 'ขยาย'; }
+$('bZoom').onclick = () => setZoom(!$('proc').classList.contains('zoom'));
+function toggleMax() { const m = !$('procPanel').classList.contains('max'); $('procPanel').classList.toggle('max', m); document.body.classList.toggle('maxed', m);
+  $('bMax').querySelector('use').setAttribute('href', m ? '#i-shrink' : '#i-expand'); $('bMax').title = m ? 'ย่อ' : 'เต็มจอ'; }
+$('bMax').onclick = toggleMax;
+setZoom(window.innerWidth < 760 && BOOT.view !== 'process');
+
+// iframe: report content height to the embedding page (for auto-resize)
+function postHeight() { try { const h = Math.ceil(document.documentElement.scrollHeight); if (h !== postHeight.h) { postHeight.h = h; window.top.postMessage({type:'water-hmi:height', height:h}, '*'); } } catch (e) {} }
+if ('ResizeObserver' in window) new ResizeObserver(postHeight).observe(document.body); else setInterval(postHeight, 1500);
+
+/* ================= start ================= */
+init(); fillSp(); renderGallery();
+if (LIVE) { $('lvPoll').textContent = (BOOT.pollMs / 1000) + ' วินาที'; if (BOOT.sheetUrl) $('lvLink').href = BOOT.sheetUrl; else $('lvLink').style.display = 'none'; $('clockL').textContent = 'เวลา'; poll(); }
+if (BOOT.logToSheet && HAS_GAS) setInterval(() => { if (!QUEUE.length) return; const batch = QUEUE.splice(0, 50); call('logEvents', [batch], null, () => { QUEUE.unshift(...batch.slice(0, 50 - QUEUE.length)); }); }, 10000);
+let last = performance.now(), acc = 0, hacc = 0;
+function loop(now) { const dt = Math.min(.1, (now - last) / 1000); last = now;
+  if (!LIVE && !S.paused) { let sim = dt * S.speed; while (sim > 0) { const d = Math.min(.05, sim); step(d); sim -= d; }
+    meterVol += S.H.FT01 * dt * S.speed / 3600 * 100;
+    hacc += dt * S.speed; while (hacc >= 2) { hacc -= 2; pushHist(); } }
+  if (LIVE) meterVol += S.H.FT01 * dt / 3600 * 100;
+  drawTank('g', S.g); drawTank('r', S.r); acc += dt; if (acc > .2) { acc = 0; ui(); charts(); }
+  requestAnimationFrame(loop); }
+ui(); requestAnimationFrame(loop); addEventListener('resize', charts);
+})();
+</script>
+
+</body>
+</html>
